@@ -1,22 +1,41 @@
-import { test, expect } from '@playwright/test';
+// pages/TodoPage.ts
+import { Page, expect } from '@playwright/test';
 
-test('test', async ({ page }) => {
-  await page.goto('https://demo.playwright.dev/todomvc/#/');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).click();
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).fill('ajouter du pain');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).press('Enter');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).press('Tab');
-  await page.getByRole('checkbox', { name: '❯Mark all as complete' }).press('l');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).click();
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).fill('');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).press('CapsLock');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).fill('A');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).press('CapsLock');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).fill('Aller courrir');
-  await page.getByRole('textbox', { name: 'What needs to be done?' }).press('Enter');
-  await page.getByRole('listitem').filter({ hasText: 'ajouter du pain' }).getByLabel('Toggle Todo').check();
-  await page.getByText('Mark all as complete').click();
-  await page.locator('html').click();
-  await page.getByRole('button', { name: 'Delete' }).click();
-  await page.pause();
-});
+export class TodoPage {
+  readonly page: Page;
+  readonly todoInput = 'input[placeholder="What needs to be done?"]';
+  readonly todoList = '.todo-list li';
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  async goto() {
+    await this.page.goto('https://demo.playwright.dev/todomvc');
+  }
+
+  async addTask(task: string) {
+    await this.page.fill(this.todoInput, task);
+    await this.page.keyboard.press('Enter');
+  }
+
+  async deleteTask(task: string) {
+    const todoItem = this.page.locator(`xpath=//label[text()="${task}"]/..`);
+    await todoItem.hover();
+    await todoItem.locator('.destroy').click();
+  }
+
+  async completeTask(task: string) {
+    const todoItem = this.page.locator(`xpath=//label[text()="${task}"]/..//input[@class='toggle']`);
+    await todoItem.check();
+  }
+
+  async isTaskVisible(task: string) {
+    await expect(this.page.getByText(task)).toBeVisible();
+  }
+
+  async isTaskCompleted(task: string) {
+    const todoItem = this.page.locator(`xpath=//label[text()="${task}"]/../..`);
+    await expect(todoItem).toHaveClass(/completed/);
+  }
+}
